@@ -2,4 +2,6 @@
 
 ## Dataset
 
-![Extent of karstified areas over Europe](D:/Masterarbeit/Presentation/images/karti.png)
+![Extent of karstified areas over Europe](./images/map_of_europe.png)
+
+![Extent of karstified areas over Europe](./images/tile_example.png)
