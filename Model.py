@@ -8,7 +8,7 @@ from MaxPool import MaxPoolingWithArgmax2D, MaxUnpooling2D
 
 
 
-def KRSconv4000():
+def KaI():
 
     terrain = keras.layers.Input(shape=(128 , 200, 3), name='terrain')
 
