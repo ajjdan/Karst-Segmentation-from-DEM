@@ -1,2 +1,5 @@
-# Karst_model
- A CNN for identifying Karst landscapes from elevation aata
+# Using Machine Learning to quantify the strength of weathering at carbonate rock landscapes
+
+## Dataset
+
+![](D:/Masterarbeit/Presentation/images/karti.png)
