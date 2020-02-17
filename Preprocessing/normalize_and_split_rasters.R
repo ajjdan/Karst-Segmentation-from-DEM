@@ -120,18 +120,19 @@ srtm_files <- list.files(path = srtm_path, pattern = "*.tif$")
 slope_path <- "D:/Masterarbeit/Data/normalized/tiles_slope/"
 slope_files <- list.files(path = slope_path, pattern = "*.tif$")
 
-flowdir_path <- "D:/Masterarbeit/Data/normalized/tiles_flowdir"
+flowdir_path <- "D:/Masterarbeit/Data/normalized/tiles_flowdir/"
 flowdir_files <- list.files(path = flowdir_path, pattern = "*.tif$")
 
-mask_path <- "D:/Masterarbeit/Data/tiles_wokam/"
+mask_path <- "D:/Masterarbeit/Data/normalized/tiles_wokam/"
 mask_files <- list.files(path = mask_path, pattern = "*.tif$")
 
-for (i in 1:length(srtm_files)) {
-  print(paste0(i, ":", "processing tile:", srtm_files[i]))
+
+for (i in 1:length(mask_files)) {
+  print(paste0(i, ":", "processing tile:", mask_files[i]))
   
-  ras <- raster(paste0(srtm_path, srtm_files[i]))
-  slope <-  raster(paste0(slope_path, slope_files[i]))
-  flow <-  raster(paste0(flowdir_path, flowdir_files[i]))
+  ras <- raster(paste0(srtm_path, mask_files[i]))
+  slope <-  raster(paste0(slope_path, mask_files[i]))
+  flow <-  raster(paste0(flowdir_path, mask_files[i]))
   
   mask <- raster(paste0(mask_path, mask_files[i]))
   
@@ -142,7 +143,7 @@ for (i in 1:length(srtm_files)) {
     
     writeRaster(
       rgb,
-      filename = paste0("D:/Masterarbeit/Data/Randbereiche/SRTM/", srtm_files[i]),
+      filename = paste0("D:/Masterarbeit/Data/Randbereiche/SRTM/", mask_files[i]),
       format = "GTiff",
       datatype = "FLT4S",
       overwrite = TRUE)

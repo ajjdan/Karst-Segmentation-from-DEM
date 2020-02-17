@@ -7,8 +7,8 @@
 ## Format of the bordering tiles dataset:
 
     - A subset of tiles that include non-karstified areas as well as karstified areas was created
-    - Data was stored in a compressed .npz file (4.6 GB) containing 144056 images, 
-		115.245 images for training and 28.811 images for testing.
+    - Data was stored in a compressed .npz file (4.6 GB) containing 144000 images, 
+		115.200 images for training and 28.800 images for testing.
     - The Data was stored in 4 seperate arrays containing testing and training input and output 
 		(x_train/x_test for input and y_train/y_test for output)
     - Input data contains a 3D array with elevation, slope and surface roughness
