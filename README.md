@@ -6,9 +6,9 @@
 
 ## Format of the bordering tiles dataset:
 
-    - A subset of tiles that include non-karstified areas as well as karstified areas was created
-    - Data was stored in a compressed .npz file (4.6 GB) containing 144000 images, 
-		115.200 images for training and 28.800 images for testing.
+    - A subset of tiles that include bordering zones of karst areas areas was created
+    - Data was stored in a compressed .npz file containing 14664 images, 
+		11731 images for training and 2933 images for testing.
     - The Data was stored in 4 seperate arrays containing testing and training input and output 
 		(x_train/x_test for input and y_train/y_test for output)
     - Input data contains a 3D array with elevation, slope and surface roughness
@@ -17,6 +17,9 @@
 ## References
 
 ### CNN Architecture
+
+Kendall, Alex; Badrinarayanan, Vijay; and Cipolla, Roberto (2015): Bayesian SegNet: Model Uncertainty in Deep Convolutional Encoder-Decoder Architectures for Scene Understanding.
+In: arXiv preprint arXiv:1511.02680.
 
 Badrinarayanan, Vijay; Kendall, Alex; Cipolla, Roberto (2015): SegNet: A Deep Convolutional Encoder-Decoder Architecture for Image Segmentation.
 http://arxiv.org/pdf/1511.00561v3.

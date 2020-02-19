@@ -1,27 +1,26 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
-
+import keras
 from sklearn.utils.class_weight import compute_class_weight
 import pandas as pd
 import numpy as np
 import os
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
-def get_data_from_npz(path, filename, categorical, class_weighted):
+def get_data_from_npz(path, filename, categorical):
     
     data_dir = tf.keras.utils.get_file(origin="file:" + path, fname=filename)
 
     with np.load(data_dir) as data:
-        train_examples = np.insert(data['x_train'] , [0, 1], 0, axis=1)
-        train_labels = np.insert( data['y_train'], [0, 1], 0, axis=1)
-        test_labels =  np.insert( data['y_test'] , [0, 1], 0, axis=1)
-        test_examples =np.insert(data['x_test'] , [0, 1], 0, axis=1)
+        train_examples = data['x_train']
+        train_labels = data['y_train']
+        test_labels =  data['y_test']
+        test_examples = data['x_test']
 
-       
     num_test_img = test_labels.shape[0]
     num_train_img = train_labels.shape[0]
-    img_heigth = 128
-    img_width = 200
+    img_heigth = 100
+    img_width = 100
     num_categories = 2
     
     if categorical is True :
@@ -35,29 +34,30 @@ def get_data_from_npz(path, filename, categorical, class_weighted):
     else:
 
         return train_labels, test_labels
-    
-    if class_weighted is True:
 
-        df = pd.DataFrame(np.column_stack(train_labels_category))
-        # Create a pd.series that represents the categorical class of each one-hot encoded row
-        y_classes = df.idxmax(1, skipna=False)
+def get_class_weights:
+    
+    df = pd.DataFrame(np.column_stack(train_labels_category))
+       # Create a pd.series that represents the categorical class of each one-hot encoded row
+    y_classes = df.idxmax(1, skipna=False)
 
         # Instantiate the label encoder
-        le = LabelEncoder()
+    le = LabelEncoder()
 
         # Fit the label encoder to our label series
-        le.fit(list(y_classes))
+    le.fit(list(y_classes))
 
         # Create integer based labels Series
-        y_integers = le.transform(list(y_classes))
+    y_integers = le.transform(list(y_classes))
 
         # Create dict of labels : integer representation
-        labels_and_integers = dict(zip(y_classes, y_integers))
+    labels_and_integers = dict(zip(y_classes, y_integers))
 
-        class_weights = compute_class_weight('balanced', np.unique(y_integers), y_integers)
+    class_weights = compute_class_weight('balanced', np.unique(y_integers), y_integers)
 
         return class_weights
-    
+
+def get_datagen: 
     datagen = keras.preprocessing.image.ImageDataGenerator()
     #samplewise_center=True,
     #samplewise_std_normalization=True,
