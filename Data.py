@@ -35,7 +35,7 @@ def get_data_from_npz(path, filename, categorical):
 
         return train_labels, test_labels
 
-def get_class_weights:
+def get_class_weights(train_labels_category):
     
     df = pd.DataFrame(np.column_stack(train_labels_category))
        # Create a pd.series that represents the categorical class of each one-hot encoded row
@@ -55,9 +55,9 @@ def get_class_weights:
 
     class_weights = compute_class_weight('balanced', np.unique(y_integers), y_integers)
 
-        return class_weights
+    return class_weights
 
-def get_datagen: 
+def get_datagen(): 
     datagen = keras.preprocessing.image.ImageDataGenerator()
     #samplewise_center=True,
     #samplewise_std_normalization=True,
