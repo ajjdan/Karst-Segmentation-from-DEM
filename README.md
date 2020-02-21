@@ -2,7 +2,7 @@
 
 ## Dataset
 
-![Extent of karstified areas over Europe](./images/map_of_europe.png)
+![Extent of karstified areas over Europe](./images/map_of_europe_karst.png)
 
 ## Format of the bordering tiles dataset:
 
