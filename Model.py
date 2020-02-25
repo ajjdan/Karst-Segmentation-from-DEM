@@ -1,58 +1,72 @@
-# adapted from : https://github.com/ykamikawa/tf-keras-SegNet/blob/master/model.py
-from __future__ import absolute_import, division, print_function, unicode_literals
-import tensorflow as tf
-from tensorflow.keras import datasets, layers, models
-import keras
+"""A simplified U-Net model.
+//arxiv.org/pdf/1505.04597
+source: https://github.com/mrubash1/keras-semantic-segmentation/blob/develop/src/semseg/models/unet.py
+"""
 
-from MaxPool import MaxPoolingWithArgmax2D, MaxUnpooling2D
+from keras.models import Model
+from keras.layers import (
+    Input, concatenate, Convolution2D, MaxPooling2D, UpSampling2D, Activation,
+    Reshape, BatchNormalization, ZeroPadding2D, Cropping2D)
 
-def KaI(n_labels):
+def make_conv_block(nb_filters, input_tensor, block):
+    def make_stage(input_tensor, stage):
+        x = Convolution2D(nb_filters,(3,3), activation='relu',  padding = "same")(input_tensor)
+        x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        return x
 
-    terrain = keras.layers.Input(shape=(100 , 100, 3), name='terrain')
+    x = make_stage(input_tensor, 1)
+    x = make_stage(x, 2)
+    return x
 
-    #lay1 = keras.layers.BatchNormalization()(terrain)
 
-    lay2 = keras.layers.Conv2D(32, (4, 4), activation='relu', padding="same" )(terrain)
-    lay3= keras.layers.Conv2D(32, (4, 4), activation='relu', padding="same" )(lay2)
-    lay4 = keras.layers.BatchNormalization()(lay3)
+def make_KaI(input_shape, nb_labels):
+    """Make a U-Net model.
+    # Arguments
+        input_shape: tuple of form (nb_rows, nb_cols, nb_channels)
+        nb_labels: number of labels in dataset
+    # Return
+        The Keras model
+    """
+    #nb_rows, nb_cols, _ = input_shape
     
-    lay5 , mask1 = MaxPoolingWithArgmax2D((2, 2))(lay4)
-
-    lay6= keras.layers.Conv2D(64, (4, 4), activation='relu', padding="same" )(lay5)
-    lay7 = keras.layers.Conv2D(64, (4, 4), activation='relu', padding="same" )(lay6)
-    lay8 = keras.layers.BatchNormalization()(lay7)
+    terrain = Input(input_shape)
+    pad_in = ZeroPadding2D(14)(terrain)
     
-    lay9, mask2 = MaxPoolingWithArgmax2D((2, 2))(lay8)
+    conv1 = make_conv_block(32, pad_in, 1)
+    pool1 = MaxPooling2D(pool_size=(2, 2), padding="same")(conv1)
 
-    lay10 = keras.layers.Conv2D(128, (4, 4), activation='relu', padding="same" )(lay9)
-    lay11 = keras.layers.Conv2D(128, (4, 4), activation='relu', padding="same" )(lay10)
-    lay12 = keras.layers.BatchNormalization()(lay11)
+    conv2 = make_conv_block(64, pool1, 2)
+    pool2 = MaxPooling2D(pool_size=(2, 2), padding="same")(conv2)
+
+    conv3 = make_conv_block(128, pool2, 3)
+    pool3 = MaxPooling2D(pool_size=(2, 2), padding="same")(conv3)
+
+    conv4 = make_conv_block(256, pool3, 4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
+
+    conv5 = make_conv_block(512, pool4, 5)
+
+    up6 = concatenate([UpSampling2D(size=(2, 2))(conv5), conv4], axis=3)
+    conv6 = make_conv_block(256, up6, 6)
+
+    up7 = concatenate([UpSampling2D(size=(2, 2))(conv6), conv3], axis=3)
+    conv7 = make_conv_block(128, up7, 4)
+
+    up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
+    conv8 = make_conv_block(64, up8, 5)
+
+    up9 = concatenate([UpSampling2D(size=(2, 2))(conv8), conv1], axis=3)
+    conv9 = make_conv_block(32, up9, 6)
+
+    conv10 = Convolution2D(2,(1, 1),padding="same")(conv9)
     
-    #lay13, mask3 = MaxPoolingWithArgmax2D((1, 1))(lay12)
-
-    #lay14 = MaxUnpooling2D((1,1))([lay13, mask3])
+    out_pad = Cropping2D((14))(conv10)
     
-    lay15 = keras.layers.Conv2D(64, (4, 4), activation='relu', padding="same" )(lay11)
-    lay16 = keras.layers.Conv2D(64, (4, 4), activation='relu', padding="same" )(lay15)
-    lay17 = keras.layers.BatchNormalization()(lay16)
+    output = Reshape((100 * 100, 2),input_shape=(100,100,2))(out_pad)
+    output = Activation('softmax')(output)
+    output = Reshape((100, 100, 2),input_shape=(100*100, 2))(output)
 
-    lay18 = MaxUnpooling2D((2,2))([lay17, mask2])
-    
-    lay19 = keras.layers.Conv2D(32, (4, 4), activation='relu', padding="same" )(lay18)
-    lay20 = keras.layers.Conv2D(32, (4, 4), activation='relu', padding="same" )(lay19)
-    lay21 = keras.layers.BatchNormalization()(lay20)
+    model = Model(inputs=terrain, outputs=output)
 
-    lay22 = MaxUnpooling2D((2,2))([lay21, mask1])
-    
-    lay23 = keras.layers.Conv2D(3, (4, 4), activation='relu', padding="same" )(lay22)
-    lay24 = keras.layers.Conv2D(3, (4, 4), activation='relu', padding="same" )(lay23)
-    lay25 = keras.layers.BatchNormalization()(lay24)
-
-    lay26 = keras.layers.Conv2D(n_labels, (1, 1), activation='relu', padding="valid")(lay25)
-    lay27 = keras.layers.BatchNormalization()(lay26)
-    lay28 = keras.layers.Reshape((100*100, n_labels),input_shape=(100,100, n_labels))(lay27)
-
-    outputs = keras.layers.Activation("softmax")(lay28) #sigmoid for binary and softmax for more classes
-
-    model = keras.Model(inputs=terrain, outputs=outputs)
     return model
