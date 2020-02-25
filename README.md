@@ -18,6 +18,8 @@
 
 ### CNN Architecture
 
+Ronneberger, Olaf; Fischer, Philipp; Brox, Thomas (2015): U-Net: Convolutional Networks for Biomedical Image Segmentation. In: http://arxiv.org/pdf/1505.04597v1.
+
 Kendall, Alex; Badrinarayanan, Vijay; and Cipolla, Roberto (2015): Bayesian SegNet: Model Uncertainty in Deep Convolutional Encoder-Decoder Architectures for Scene Understanding.
 In: arXiv preprint arXiv:1511.02680.
 
