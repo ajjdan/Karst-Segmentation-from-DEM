@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import tensorflow as tf
-import keras
+import tensorflow.keras
 from sklearn.utils.class_weight import compute_class_weight
 import pandas as pd
 import numpy as np
@@ -26,8 +26,8 @@ def get_data_from_npz(path, filename, categorical):
     if categorical is True :
         train_labels_small= train_labels[:,:,:,0].astype(int)
         test_labels_small = test_labels[:,:,:,0].astype(int)
-        train_labels_category = keras.utils.to_categorical(train_labels_small)#.reshape(num_train_img,img_heigth*img_width,num_categories)
-        test_labels_category = keras.utils.to_categorical(test_labels_small)#.reshape(num_test_img,img_heigth*img_width,num_categories)
+        train_labels_category = tf.keras.utils.to_categorical(train_labels_small)#.reshape(num_train_img,img_heigth*img_width,num_categories)
+        test_labels_category = tf.keras.utils.to_categorical(test_labels_small)#.reshape(num_test_img,img_heigth*img_width,num_categories)
 
         return train_examples, test_examples, train_labels_category, test_labels_category
     
@@ -60,7 +60,7 @@ def get_class_weights(train_labels_category):
 def get_datagen(): 
     datagen = keras.preprocessing.image.ImageDataGenerator(
     samplewise_center=True,
-    #samplewise_std_normalization=True,
+    samplewise_std_normalization=True
     #rotation_range=20,
     #width_shift_range=0.2,
     #height_shift_range=0.2,

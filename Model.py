@@ -3,8 +3,8 @@
 source: https://github.com/mrubash1/keras-semantic-segmentation/blob/develop/src/semseg/models/unet.py
 """
 
-from keras.models import Model
-from keras.layers import (
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import (
     Input, concatenate, Convolution2D, MaxPooling2D, UpSampling2D, Activation,
     Reshape, BatchNormalization, ZeroPadding2D, Cropping2D)
 
@@ -28,12 +28,12 @@ def make_KaI(input_shape, nb_labels):
     # Return
         The Keras model
     """
-    #nb_rows, nb_cols, _ = input_shape
+    nb_rows, nb_cols, _ = input_shape
     
     terrain = Input(input_shape)
-    pad_in = ZeroPadding2D(14)(terrain)
+    #pad_in = ZeroPadding2D(14)(terrain)
     
-    conv1 = make_conv_block(32, pad_in, 1)
+    conv1 = make_conv_block(32, terrain, 1)
     pool1 = MaxPooling2D(pool_size=(2, 2), padding="same")(conv1)
 
     conv2 = make_conv_block(64, pool1, 2)
@@ -59,13 +59,13 @@ def make_KaI(input_shape, nb_labels):
     up9 = concatenate([UpSampling2D(size=(2, 2))(conv8), conv1], axis=3)
     conv9 = make_conv_block(32, up9, 6)
 
-    conv10 = Convolution2D(2,(1, 1),padding="same")(conv9)
+    conv10 = Convolution2D(nb_labels,(1, 1),padding="same")(conv9)
     
-    out_pad = Cropping2D((14))(conv10)
+    #out_pad = Cropping2D((14))(conv10)
     
-    output = Reshape((100 * 100, 2),input_shape=(100,100,2))(out_pad)
+    output = Reshape((nb_rows*nb_cols, nb_labels),input_shape=(nb_rows,nb_cols,nb_labels))(conv10)
     output = Activation('softmax')(output)
-    output = Reshape((100, 100, 2),input_shape=(100*100, 2))(output)
+    output = Reshape((nb_rows, nb_cols, nb_labels),input_shape=(nb_rows*nb_cols, nb_labels))(output)
 
     model = Model(inputs=terrain, outputs=output)
 
