@@ -83,18 +83,12 @@ STEPS_PER_EPOCH = TRAIN_LENGTH // BATCH_SIZE
 def load_image_train(datapoint_1, datapoint_2):
     input_image = tf.image.resize(datapoint_1, (128, 128))
     input_mask = tf.image.resize(datapoint_2, (128, 128))
-    input_mask += 1
-
-    if tf.random.uniform(()) > 0.5:
-        input_image = tf.image.flip_left_right(input_image)
-        input_mask = tf.image.flip_left_right(input_mask)
 
     return input_image, input_mask
 
 def load_image_test(datapoint_1, datapoint_2):
     input_image = tf.image.resize(datapoint_1, (128, 128))
     input_mask = tf.image.resize(datapoint_2, (128, 128))
-    input_mask += 1
     
     return input_image, input_mask
 
@@ -150,7 +144,7 @@ for image, mask in train.take(5000):
 display([sample_image, sample_mask])
 
 
-# In[13]:
+# In[12]:
 
 
 num_epochs = 3
@@ -164,13 +158,13 @@ n_labels = 2
 
 # ### Import the model
 
-# In[14]:
+# In[13]:
 
 
 from Model import make_KaI
 
 
-# In[15]:
+# In[14]:
 
 
 model = make_KaI((128,128,3),2)
@@ -188,7 +182,7 @@ tf.keras.utils.plot_model(model, to_file="D:/Masterarbeit/Data/Randbereiche/mode
 
 # ### Compile the model
 
-# In[16]:
+# In[15]:
 
 
 sgd = tf.keras.optimizers.SGD(lr=1e-5)
@@ -196,17 +190,17 @@ adam = tf.keras.optimizers.Adam(lr=0.001)
 adadelta = tf.keras.optimizers.Adadelta(lr=1e-5)
 
 
-# In[17]:
+# In[16]:
 
 
 model.compile(optimizer=adam,
-              loss= "categorical_crossentropy",
+              loss= tf.keras.losses.CategoricalCrossentropy(from_logits=True),
               metrics=["accuracy"])
 
 
 # ### Fit the model 
 
-# In[18]:
+# In[17]:
 
 
 def create_mask(pred_mask):
@@ -215,7 +209,7 @@ def create_mask(pred_mask):
     return pred_mask[0]
 
 
-# In[19]:
+# In[18]:
 
 
 def show_predictions(dataset=None, num=1):
@@ -227,7 +221,7 @@ def show_predictions(dataset=None, num=1):
         create_mask(model.predict(sample_image[tf.newaxis, ...]))])
 
 
-# In[20]:
+# In[19]:
 
 
 class DisplayCallback(tf.keras.callbacks.Callback):
@@ -237,10 +231,10 @@ class DisplayCallback(tf.keras.callbacks.Callback):
         print ('\nSample Prediction after epoch {}\n'.format(epoch+1))
 
 
-# In[21]:
+# In[ ]:
 
 
-EPOCHS = 2
+EPOCHS = 10
 VAL_SUBSPLITS = 5
 VALIDATION_STEPS = 1660//BATCH_SIZE//VAL_SUBSPLITS
 

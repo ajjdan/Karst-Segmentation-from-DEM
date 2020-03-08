@@ -19,13 +19,15 @@ def get_data_from_npz(path, filename, categorical):
 
     num_test_img = test_labels.shape[0]
     num_train_img = train_labels.shape[0]
-    img_heigth = 100
-    img_width = 100
+    img_heigth = test_labels.shape[1]
+    img_width = test_labels.shape[2]
     num_categories = 2
     
     if categorical is True :
         train_labels_small= train_labels[:,:,:,0].astype(int)
         test_labels_small = test_labels[:,:,:,0].astype(int)
+        #train_labels_small += 1
+        #test_labels_small += 1
         train_labels_category = tf.keras.utils.to_categorical(train_labels_small)#.reshape(num_train_img,img_heigth*img_width,num_categories)
         test_labels_category = tf.keras.utils.to_categorical(test_labels_small)#.reshape(num_test_img,img_heigth*img_width,num_categories)
 
