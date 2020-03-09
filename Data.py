@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import os
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+import matplotlib.pyplot as plt
 
 def get_data_from_npz(path, filename, categorical):
     
@@ -37,28 +38,35 @@ def get_data_from_npz(path, filename, categorical):
 
         return train_examples, test_examples, train_labels, test_labels
 
-def get_class_weights(train_labels_category):
+@tf.function
+def load_image_train(datapoint_1, datapoint_2):
+    input_image = tf.image.resize(datapoint_1, (128, 128))
+    input_mask = tf.image.resize(datapoint_2, (128, 128))
+
+    return input_image, input_mask
+
+def load_image_test(datapoint_1, datapoint_2):
+    input_image = tf.image.resize(datapoint_1, (128, 128))
+    input_mask = tf.image.resize(datapoint_2, (128, 128))
     
-    df = pd.DataFrame(np.column_stack(train_labels_category))
-       # Create a pd.series that represents the categorical class of each one-hot encoded row
-    y_classes = df.idxmax(1, skipna=False)
+    return input_image, input_mask
 
-        # Instantiate the label encoder
-    le = LabelEncoder()
+def display(display_list):
+    plt.figure(figsize=(15, 15))
 
-        # Fit the label encoder to our label series
-    le.fit(list(y_classes))
+    title = ['Input Image', 'True Mask', 'Predicted Mask']
 
-        # Create integer based labels Series
-    y_integers = le.transform(list(y_classes))
-
-        # Create dict of labels : integer representation
-    labels_and_integers = dict(zip(y_classes, y_integers))
-
-    class_weights = compute_class_weight('balanced', np.unique(y_integers), y_integers)
-
-    return class_weights
-
+    for i in range(len(display_list)):
+        plt.subplot(1, len(display_list), i+1)
+        plt.title(title[i])
+        if display_list[i].shape[2] == 3:
+            plt.imshow(display_list[i])
+            plt.axis('off')
+        else:
+            plt.imshow(display_list[i][:,:,0], cmap = "Greys")
+            plt.axis('off')
+    plt.show()
+    
 def get_datagen(): 
     datagen = keras.preprocessing.image.ImageDataGenerator(
     samplewise_center=True,
