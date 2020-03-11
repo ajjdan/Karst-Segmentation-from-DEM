@@ -65,7 +65,7 @@ SplitRas(slope_norm_crop,path = "D:/Masterarbeit/Data/Balkans/tiles_slope/")
 SplitRas(flowdir_norm_crop,path = "D:/Masterarbeit/Data/Balkans/tiles_flowdir/")
 SplitRas(wokam_crop,path = "D:/Masterarbeit/Data/Balkans/tiles_wokam/")
 
-# ONLY BORDERING AREAS -----------------------------------------------------
+# Exclude NA -----------------------------------------------------
 
 srtm_path <- "D:/Masterarbeit/Data/Balkans/tiles_srtm/"
 srtm_files <- list.files(path = srtm_path, pattern = "*.tif$")
@@ -89,21 +89,22 @@ for (i in 1:length(mask_files)) {
   
   mask <- raster(paste0(mask_path, mask_files[i]))
   
-  
   if (sum(is.na(getValues(ras))) == 0 ) {
     
     rgb <- stack(ras, slope, flow)
+    rgb[mask == 1] <- rgb[mask == 1]*2
+    rgb[mask == 0] <- rgb[mask == 0]*0.5
     
     writeRaster(
       rgb,
-      filename = paste0("D:/Masterarbeit/Data/Balkans/rgb/", mask_files[i]),
+      filename = paste0("D:/Masterarbeit/Data/Balkans/modified/rgb/", mask_files[i]),
       format = "GTiff",
       datatype = "FLT4S",
       overwrite = TRUE)
     
     writeRaster(
       mask,
-      filename = paste0("D:/Masterarbeit/Data/Balkans/wokam/", mask_files[i]),
+      filename = paste0("D:/Masterarbeit/Data/Balkans/modified/wokam/", mask_files[i]),
       format = "GTiff",
       datatype = "FLT4S",
       overwrite = TRUE)
