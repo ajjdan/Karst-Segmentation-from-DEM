@@ -2,86 +2,59 @@
 //arxiv.org/pdf/1505.04597
 source: https://github.com/mrubash1/keras-semantic-segmentation/blob/develop/src/semseg/models/unet.py
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+import tensorflow as tf
 
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
-    Input, concatenate, Convolution2D, MaxPooling2D, UpSampling2D, Activation,
-    Reshape, BatchNormalization, ZeroPadding2D, Cropping2D)
+    Input, concatenate, Conv2D, MaxPooling2D, UpSampling2D, Activation,
+    Reshape, BatchNormalization, Flatten, Dense, Dropout, Conv2DTranspose)
+import os
 
-def make_conv_block(nb_filters, input_tensor, block):
-    def make_stage(input_tensor, stage):
-        x = Convolution2D(nb_filters,(3,3), activation='relu',  padding = "same")(input_tensor)
-        x = BatchNormalization()(x)
-        x = Activation('relu')(x)
-        return x
-
-    x = make_stage(input_tensor, 1)
-    x = make_stage(x, 2)
+def conv_block(tensor, nfilters, size=3, padding='same', initializer="he_normal"):
+    x = Conv2D(filters=nfilters, kernel_size=(size, size), padding=padding, kernel_initializer=initializer)(tensor)
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    x = Conv2D(filters=nfilters, kernel_size=(size, size), padding=padding, kernel_initializer=initializer)(x)
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
     return x
 
 
-def make_KaI(input_shape, nb_labels):
-    """Make a U-Net model.
-    # Arguments
-        input_shape: tuple of form (nb_rows, nb_cols, nb_channels)
-        nb_labels: number of labels in dataset
-    # Return
-        The Keras model
-    """
-    nb_rows, nb_cols, _ = input_shape
-    
-    terrain = Input(input_shape)
-    #pad_in = ZeroPadding2D(14)(terrain)
-    
-    conv1 = make_conv_block(32, terrain, 1)
-    pool1 = MaxPooling2D(pool_size=(2, 2), padding="same")(conv1)
+def deconv_block(tensor, residual, nfilters, size=3, padding='same', strides=(2, 2)):
+    y = Conv2DTranspose(nfilters, kernel_size=(size, size), strides=strides, padding=padding)(tensor)
+    y = concatenate([y, residual], axis=3)
+    y = conv_block(y, nfilters)
+    return y
 
-    conv2 = make_conv_block(64, pool1, 2)
-    pool2 = MaxPooling2D(pool_size=(2, 2), padding="same")(conv2)
 
-    conv3 = make_conv_block(128, pool2, 3)
-    pool3 = MaxPooling2D(pool_size=(2, 2), padding="same")(conv3)
+def make_KaI(img_height, img_width, nclasses=2, filters=64):
+# down
+    input_layer = Input(shape=(img_height, img_width, 3), name='image_input')
+    conv1 = conv_block(input_layer, nfilters=filters)
+    conv1_out = MaxPooling2D(pool_size=(2, 2))(conv1)
+    conv2 = conv_block(conv1_out, nfilters=filters*2)
+    conv2_out = MaxPooling2D(pool_size=(2, 2))(conv2)
+    conv3 = conv_block(conv2_out, nfilters=filters*4)
+    conv3_out = MaxPooling2D(pool_size=(2, 2))(conv3)
+    #conv4 = conv_block(conv3_out, nfilters=filters*8)
+    #conv4_out = MaxPooling2D(pool_size=(2, 2))(conv4)
+    #conv4_out = Dropout(0.5)(conv4_out)
+    #conv5 = conv_block(conv4_out, nfilters=filters*16)
+    #conv5 = Dropout(0.5)(conv5)
+# up
+    #deconv6 = deconv_block(conv5, residual=conv4, nfilters=filters*8)
+    #deconv6 = Dropout(0.5)(deconv6)
+    #deconv7 = deconv_block(deconv6, residual=conv3, nfilters=filters*4)
+    #deconv7 = Dropout(0.5)(deconv7) 
+    deconv8 = deconv_block(conv3, residual=conv2, nfilters=filters*2)
+    deconv9 = deconv_block(deconv8, residual=conv1, nfilters=filters)
+# output
+    output_layer = Conv2D(filters=2, kernel_size=(1, 1))(deconv9)
+    #output_layer = Reshape((128, 128), input_shape=(128,128,1))(output_layer)
+    output_layer = BatchNormalization()(output_layer)
+    output_layer = Activation('sigmoid')(output_layer)
 
-    conv4 = make_conv_block(256, pool3, 4)
-    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
-
-    conv5 = make_conv_block(512, pool4, 5)
-
-    up6 = concatenate([UpSampling2D(size=(2, 2))(conv5), conv4], axis=3)
-    conv6 = make_conv_block(256, up6, 6)
-
-    up7 = concatenate([UpSampling2D(size=(2, 2))(conv6), conv3], axis=3)
-    conv7 = make_conv_block(128, up7, 4)
-
-    up8 = concatenate([UpSampling2D(size=(2, 2))(conv7), conv2], axis=3)
-    conv8 = make_conv_block(64, up8, 5)
-
-    up9 = concatenate([UpSampling2D(size=(2, 2))(conv8), conv1], axis=3)
-    conv9 = make_conv_block(32, up9, 6)
-
-    conv10 = Convolution2D(nb_labels,(1, 1),padding="same")(conv9)
-    
-    #out_pad = Cropping2D((14))(conv10)
-    
-    output = Reshape((nb_rows*nb_cols, nb_labels),input_shape=(nb_rows,nb_cols,nb_labels))(conv10)
-    output = Activation('softmax')(output)
-    output = Reshape((nb_rows, nb_cols, nb_labels),input_shape=(nb_rows*nb_cols, nb_labels))(output)
-
-    model = Model(inputs=terrain, outputs=output)
-
+    model = Model(inputs=input_layer, outputs=output_layer, name='Unet')
     return model
-
-def create_mask(pred_mask):
-    pred_mask = tf.argmax(pred_mask, axis=-1)
-    pred_mask = pred_mask[..., tf.newaxis]
-    return pred_mask[0]
-
-def show_predictions(dataset=None, num=1):
-    if dataset:
-        pred_mask = model.predict(image)
-        display([image[0], mask[0], create_mask(pred_mask)])
-    else:
-        display([sample_image, sample_mask,
-        create_mask(model.predict(sample_image[tf.newaxis, ...]))])
-
-
