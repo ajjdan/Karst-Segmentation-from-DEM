@@ -61,20 +61,102 @@ def image_generator(files, files_2, batch_size = 64, intensify = False):
         batch_output = [] 
           
           # Read in each input, perform preprocessing and get labels
-        if intensify == True:
+        if intensify == 10:
             for indx in random_index:
                 raster = get_input(files[int(indx)] )
                 mask = get_output(files_2[int(indx)])
 
-                mask_idx = mask.reshape(128*128)
+                mask_idx = mask.reshape(128*128)                
+                
+                band_1 = raster[:,:,0].reshape(128*128)
+                band_2 = raster[:,:,1].reshape(128*128)
+                band_3 = raster[:,:,2].reshape(128*128)
+                
+                image_inx_1 = np.where(mask_idx > 0, band_1, 1.1*band_1).reshape(128,128)
+                image_inx_2 = np.where(mask_idx > 0, band_2, 1.1*band_2).reshape(128,128)
+                image_inx_3 = np.where(mask_idx > 0, band_3, 1.1*band_3).reshape(128,128)
 
-                band_1 = preprocessing.minmax_scale(raster[:,:,0],feature_range=(0.2, 1)).reshape(128*128*1)
-                band_2 = preprocessing.minmax_scale(raster[:,:,1], feature_range=(0.2, 1)).reshape(128*128*1)
-                band_3 = preprocessing.minmax_scale(raster[:,:,2], feature_range=(0.2, 1)).reshape(128*128*1)
+                out_band_1 = preprocessing.minmax_scale(image_inx_1,feature_range=(0.2, 1))
+                out_band_2 = preprocessing.minmax_scale(image_inx_2, feature_range=(0.2, 1))
+                out_band_3 = preprocessing.minmax_scale(image_inx_3, feature_range=(0.2, 1))
 
-                image_inx_1 = np.where(mask_idx > 0, band_1, 10*band_1).reshape(128,128)
-                image_inx_2 = np.where(mask_idx > 0, band_2, 10*band_2).reshape(128,128)
-                image_inx_3 = np.where(mask_idx > 0, band_3, 10*band_3).reshape(128,128)
+                image_inx_1 = exposure.equalize_hist(band_1).reshape(128,128)
+                image_inx_2 = exposure.equalize_hist(band_2).reshape(128,128)
+                image_inx_3 = exposure.equalize_hist(band_3).reshape(128,128)
+
+                raster = np.dstack((image_inx_1, image_inx_2, image_inx_3))
+
+                raster_preproc = preprocess_input(image=raster)
+                mask = preprocess_output(image = mask)
+
+                batch_input += [ raster_preproc ]
+                batch_output += [ mask ]
+
+              # Return a tuple of (input, output) to feed the network
+                batch_x = np.array( batch_input )
+                batch_y = np.array( batch_output )
+
+                yield( batch_x, batch_y )
+                
+        elif intensify == 20:
+            for indx in random_index:
+                raster = get_input(files[int(indx)] )
+                mask = get_output(files_2[int(indx)])
+
+                mask_idx = mask.reshape(128*128)                
+                
+                band_1 = raster[:,:,0].reshape(128*128)
+                band_2 = raster[:,:,1].reshape(128*128)
+                band_3 = raster[:,:,2].reshape(128*128)
+                
+                image_inx_1 = np.where(mask_idx > 0, band_1, 1.2*band_1).reshape(128,128)
+                image_inx_2 = np.where(mask_idx > 0, band_2, 1.2*band_2).reshape(128,128)
+                image_inx_3 = np.where(mask_idx > 0, band_3, 1.2*band_3).reshape(128,128)
+
+                out_band_1 = preprocessing.minmax_scale(image_inx_1,feature_range=(0.2, 1))
+                out_band_2 = preprocessing.minmax_scale(image_inx_2, feature_range=(0.2, 1))
+                out_band_3 = preprocessing.minmax_scale(image_inx_3, feature_range=(0.2, 1))
+
+                image_inx_1 = exposure.equalize_hist(band_1).reshape(128,128)
+                image_inx_2 = exposure.equalize_hist(band_2).reshape(128,128)
+                image_inx_3 = exposure.equalize_hist(band_3).reshape(128,128)
+
+                raster = np.dstack((image_inx_1, image_inx_2, image_inx_3))
+
+                raster_preproc = preprocess_input(image=raster)
+                mask = preprocess_output(image = mask)
+
+                batch_input += [ raster_preproc ]
+                batch_output += [ mask ]
+
+              # Return a tuple of (input, output) to feed the network
+                batch_x = np.array( batch_input )
+                batch_y = np.array( batch_output )
+
+                yield( batch_x, batch_y )
+                
+        elif intensify == 50:
+            for indx in random_index:
+                raster = get_input(files[int(indx)] )
+                mask = get_output(files_2[int(indx)])
+
+                mask_idx = mask.reshape(128*128)                
+                
+                band_1 = raster[:,:,0].reshape(128*128)
+                band_2 = raster[:,:,1].reshape(128*128)
+                band_3 = raster[:,:,2].reshape(128*128)
+                
+                image_inx_1 = np.where(mask_idx > 0, band_1, 1.5*band_1).reshape(128,128)
+                image_inx_2 = np.where(mask_idx > 0, band_2, 1.5*band_2).reshape(128,128)
+                image_inx_3 = np.where(mask_idx > 0, band_3, 1.5*band_3).reshape(128,128)
+
+                out_band_1 = preprocessing.minmax_scale(image_inx_1,feature_range=(0.2, 1))
+                out_band_2 = preprocessing.minmax_scale(image_inx_2, feature_range=(0.2, 1))
+                out_band_3 = preprocessing.minmax_scale(image_inx_3, feature_range=(0.2, 1))
+                
+                image_inx_1 = exposure.equalize_hist(band_1).reshape(128,128)
+                image_inx_2 = exposure.equalize_hist(band_2).reshape(128,128)
+                image_inx_3 = exposure.equalize_hist(band_3).reshape(128,128)
 
                 raster = np.dstack((image_inx_1, image_inx_2, image_inx_3))
 
