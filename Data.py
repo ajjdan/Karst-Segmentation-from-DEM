@@ -11,7 +11,7 @@ from glob import glob
 from random import choices
 from sklearn import preprocessing
 from skimage import exposure
-
+from sklearn.impute import SimpleImputer
 #So, I like to split the batch generator into 4 steps:
 #1. Get input            : input_path -> image
 #2. Get output           : input_path -> label
@@ -40,54 +40,77 @@ def preprocess_input( image ):
     return( image )
 
 
-def preprocess_output( image ):
+def preprocess_output( image, categorical ):
     
     image = np.array(image)
     
-    image = tf.keras.utils.to_categorical(image)
+    if categorical == True:
+        image = tf.keras.utils.to_categorical(image)
+    else:
+        image = image[:,:, np.newaxis]
     
     return( image )
 
 #Step 4 : Bring everything together to define your generator :
-def image_generator(files, files_2, batch_size = 64, intensify = False):
+def image_generator(files, files_2, batch_size = 64, intensify = False, random = True, batch_start = 0, categorical = True):
+    
+    samples_per_epoch = len(files)
+    number_of_batches = samples_per_epoch/batch_size
+    counter=0
     
     while True:
-          # Select files (paths/indices) for the batch
-        #batch_paths  = np.random.choice(a = files, 
-        #                                  size = batch_size)
-        random_index = choices(range(len(files)), k = batch_size)
-      
+       
+        if random == True:
+            random_index = choices(range(len(files)), k = batch_size)
+        else: 
+            random_index = range(batch_size*counter,batch_size*(counter+1))
+     
         batch_input  = []
         batch_output = [] 
-          
+        
+                
           # Read in each input, perform preprocessing and get labels
         if intensify == 10:
             for indx in random_index:
                 raster = get_input(files[int(indx)] )
                 mask = get_output(files_2[int(indx)])
 
-                mask_idx = mask.reshape(128*128)                
+                mask_idx = mask               
                 
-                band_1 = raster[:,:,0].reshape(128*128)
-                band_2 = raster[:,:,1].reshape(128*128)
-                band_3 = raster[:,:,2].reshape(128*128)
+                band_1 = raster[:,:,0]
+                band_2 = raster[:,:,1]
+                band_3 = raster[:,:,2]
                 
-                image_inx_1 = np.where(mask_idx > 0, band_1, 1.1*band_1).reshape(128,128)
-                image_inx_2 = np.where(mask_idx > 0, band_2, 1.1*band_2).reshape(128,128)
-                image_inx_3 = np.where(mask_idx > 0, band_3, 1.1*band_3).reshape(128,128)
+                image_inx_1 = np.nan_to_num(np.where(mask_idx > 0, band_1, np.multiply(band_1,1.1)))
+                image_inx_2 = np.nan_to_num(np.where(mask_idx > 0, band_2, np.multiply(band_2,1.1)))
+                image_inx_3 = np.nan_to_num(np.where(mask_idx > 0, band_3, np.multiply(band_3,1.1)))
+                
+                 
+                #imputer=SimpleImputer(missing_values=np.nan,strategy='mean')
+                #imputer=imputer.fit(image_inx_1)
+                #image_inx_1=imputer.transform(image_inx_1)
+                
+                #imputer=SimpleImputer(missing_values=np.nan,strategy='mean')
+                #imputer=imputer.fit(image_inx_2)
+                #image_inx_2=imputer.transform(image_inx_2)
+                
+                #imputer=SimpleImputer(missing_values=np.nan,strategy='mean')
+                #imputer=imputer.fit(image_inx_3)
+                #image_inx_3=imputer.transform(image_inx_3)
+
 
                 out_band_1 = preprocessing.minmax_scale(image_inx_1,feature_range=(0.2, 1))
                 out_band_2 = preprocessing.minmax_scale(image_inx_2, feature_range=(0.2, 1))
                 out_band_3 = preprocessing.minmax_scale(image_inx_3, feature_range=(0.2, 1))
 
-                image_inx_1 = exposure.equalize_hist(band_1).reshape(128,128)
-                image_inx_2 = exposure.equalize_hist(band_2).reshape(128,128)
-                image_inx_3 = exposure.equalize_hist(band_3).reshape(128,128)
+                image_inx_1 = exposure.equalize_hist(out_band_1)
+                image_inx_2 = exposure.equalize_hist(out_band_2)
+                image_inx_3 = exposure.equalize_hist(out_band_3)
 
                 raster = np.dstack((image_inx_1, image_inx_2, image_inx_3))
 
                 raster_preproc = preprocess_input(image=raster)
-                mask = preprocess_output(image = mask)
+                mask = preprocess_output(image = mask, categorical = categorical)
 
                 batch_input += [ raster_preproc ]
                 batch_output += [ mask ]
@@ -103,28 +126,28 @@ def image_generator(files, files_2, batch_size = 64, intensify = False):
                 raster = get_input(files[int(indx)] )
                 mask = get_output(files_2[int(indx)])
 
-                mask_idx = mask.reshape(128*128)                
+                mask_idx = mask                
                 
-                band_1 = raster[:,:,0].reshape(128*128)
-                band_2 = raster[:,:,1].reshape(128*128)
-                band_3 = raster[:,:,2].reshape(128*128)
+                band_1 = raster[:,:,0]
+                band_2 = raster[:,:,1]
+                band_3 = raster[:,:,2]
                 
-                image_inx_1 = np.where(mask_idx > 0, band_1, 1.2*band_1).reshape(128,128)
-                image_inx_2 = np.where(mask_idx > 0, band_2, 1.2*band_2).reshape(128,128)
-                image_inx_3 = np.where(mask_idx > 0, band_3, 1.2*band_3).reshape(128,128)
+                image_inx_1 = np.nan_to_num(np.where(mask_idx > 0, band_1, np.multiply(band_1,1.2)))
+                image_inx_2 = np.nan_to_num(np.where(mask_idx > 0, band_2, np.multiply(band_2,1.2)))
+                image_inx_3 = np.nan_to_num(np.where(mask_idx > 0, band_3, np.multiply(band_3,1.2)))
 
                 out_band_1 = preprocessing.minmax_scale(image_inx_1,feature_range=(0.2, 1))
                 out_band_2 = preprocessing.minmax_scale(image_inx_2, feature_range=(0.2, 1))
                 out_band_3 = preprocessing.minmax_scale(image_inx_3, feature_range=(0.2, 1))
 
-                image_inx_1 = exposure.equalize_hist(band_1).reshape(128,128)
-                image_inx_2 = exposure.equalize_hist(band_2).reshape(128,128)
-                image_inx_3 = exposure.equalize_hist(band_3).reshape(128,128)
+                image_inx_1 = exposure.equalize_hist(out_band_1)
+                image_inx_2 = exposure.equalize_hist(out_band_2)
+                image_inx_3 = exposure.equalize_hist(out_band_3)
 
                 raster = np.dstack((image_inx_1, image_inx_2, image_inx_3))
 
                 raster_preproc = preprocess_input(image=raster)
-                mask = preprocess_output(image = mask)
+                mask = preprocess_output(image = mask, categorical = categorical)
 
                 batch_input += [ raster_preproc ]
                 batch_output += [ mask ]
@@ -140,28 +163,28 @@ def image_generator(files, files_2, batch_size = 64, intensify = False):
                 raster = get_input(files[int(indx)] )
                 mask = get_output(files_2[int(indx)])
 
-                mask_idx = mask.reshape(128*128)                
+                mask_idx = mask              
                 
-                band_1 = raster[:,:,0].reshape(128*128)
-                band_2 = raster[:,:,1].reshape(128*128)
-                band_3 = raster[:,:,2].reshape(128*128)
+                band_1 = raster[:,:,0]
+                band_2 = raster[:,:,1]
+                band_3 = raster[:,:,2]
                 
-                image_inx_1 = np.where(mask_idx > 0, band_1, 1.5*band_1).reshape(128,128)
-                image_inx_2 = np.where(mask_idx > 0, band_2, 1.5*band_2).reshape(128,128)
-                image_inx_3 = np.where(mask_idx > 0, band_3, 1.5*band_3).reshape(128,128)
+                image_inx_1 = np.nan_to_num(np.where(mask_idx > 0, band_1, np.multiply(band_1,1.05)))
+                image_inx_2 = np.nan_to_num(np.where(mask_idx > 0, band_2, np.multiply(band_2,1.05)))
+                image_inx_3 = np.nan_to_num(np.where(mask_idx > 0, band_3, np.multiply(band_3,1.05)))
 
                 out_band_1 = preprocessing.minmax_scale(image_inx_1,feature_range=(0.2, 1))
                 out_band_2 = preprocessing.minmax_scale(image_inx_2, feature_range=(0.2, 1))
                 out_band_3 = preprocessing.minmax_scale(image_inx_3, feature_range=(0.2, 1))
                 
-                image_inx_1 = exposure.equalize_hist(band_1).reshape(128,128)
-                image_inx_2 = exposure.equalize_hist(band_2).reshape(128,128)
-                image_inx_3 = exposure.equalize_hist(band_3).reshape(128,128)
+                image_inx_1 = exposure.equalize_hist(out_band_1)
+                image_inx_2 = exposure.equalize_hist(out_band_2)
+                image_inx_3 = exposure.equalize_hist(out_band_3)
 
                 raster = np.dstack((image_inx_1, image_inx_2, image_inx_3))
 
                 raster_preproc = preprocess_input(image=raster)
-                mask = preprocess_output(image = mask)
+                mask = preprocess_output(image = mask, categorical = categorical)
 
                 batch_input += [ raster_preproc ]
                 batch_output += [ mask ]
@@ -178,19 +201,19 @@ def image_generator(files, files_2, batch_size = 64, intensify = False):
                 raster = get_input(files[int(indx)] )
                 mask = get_output(files_2[int(indx)])
                     
-                raste = preprocess_input(image=raster)
+                raster = preprocess_input(image=raster)
                     
-                band_1 = preprocessing.minmax_scale(raster[:,:,0],feature_range=(0.2, 1)).reshape(128*128*1)
-                band_2 = preprocessing.minmax_scale(raster[:,:,1], feature_range=(0.2, 1)).reshape(128*128*1)
-                band_3 = preprocessing.minmax_scale(raster[:,:,2], feature_range=(0.2, 1)).reshape(128*128*1)
+                band_1 = preprocessing.minmax_scale(raster[:,:,0],feature_range=(0.2, 1))
+                band_2 = preprocessing.minmax_scale(raster[:,:,1], feature_range=(0.2, 1))
+                band_3 = preprocessing.minmax_scale(raster[:,:,2], feature_range=(0.2, 1))
 
-                image_inx_1 = exposure.equalize_hist(band_1).reshape(128,128)
-                image_inx_2 = exposure.equalize_hist(band_2).reshape(128,128)
-                image_inx_3 = exposure.equalize_hist(band_3).reshape(128,128)
+                image_inx_1 = exposure.equalize_hist(band_1)
+                image_inx_2 = exposure.equalize_hist(band_2)
+                image_inx_3 = exposure.equalize_hist(band_3)
 
                 raster_preproc = np.dstack((image_inx_1, image_inx_2, image_inx_3))
 
-                mask = preprocess_output(image = mask)
+                mask = preprocess_output(image = mask, categorical = categorical)
 
                 batch_input += [ raster_preproc ]
                 batch_output += [ mask ]
@@ -200,3 +223,6 @@ def image_generator(files, files_2, batch_size = 64, intensify = False):
                 batch_y = np.array( batch_output )
 
                 yield( batch_x, batch_y )
+                
+        if counter >= number_of_batches:
+            counter = 0

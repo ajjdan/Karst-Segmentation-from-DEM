@@ -20,14 +20,15 @@ library(rgdal)
 preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
            stretch_transform = FALSE,
            rescaled_out_path = "D:/Masterarbeit/Data/rescaled/",
-           rgb_out_path = "D:/Masterarbeit/Data/srtm/srtm.tif",
+           rgb_out_path = "D:/Masterarbeit/Data/raw_terrain_data/",
            mask_file = "D:/Masterarbeit/Data/wokam/wokam_bin.tif",
            slope_file = "D:/Masterarbeit/Data/slope/slope.tif",
            flowdir_file = "D:/Masterarbeit/Data/flowdir/flowdir.tif",
            tile_size = c(128, 128),
            tile_path = "D:/Masterarbeit/Data/raw_terrain_data/",
            tiles = TRUE,
-           only_bordering_areas = TRUE) {
+           only_bordering_areas = TRUE,
+           train_test_split = TRUE) {
   
     srtm <- raster(srtm_file)
     slope <- raster(slope_file)
@@ -192,7 +193,7 @@ preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
         
         
         if (max(getValues(mask)) == 1 &
-            min(getValues(mask)) == 0 & !all(is.na(getValues(ras)))) {
+            min(getValues(mask)) == 0 & !any(is.na(getValues(ras)))) {
           rgb <- stack(ras, slope, flow)
           
           writeRaster(
@@ -226,7 +227,7 @@ preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
         mask <- raster(paste0(mask_path, mask_files[i]))
         
         
-        if (!all(is.na(getValues(ras)))) {
+        if (!any(is.na(getValues(ras)))) {
           rgb <- stack(ras, slope, flow)
           
           writeRaster(
@@ -271,8 +272,8 @@ preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
         mask <- raster(paste0(rgb_out_path, "WOKAM/", filenamee))
         
         writeRaster(
-          three_band,
-          filename = paste0(rgb_out_path, "test/tf_data/SRTM/", filenamee),
+          rgb,
+          filename = paste0(rgb_out_path, "tf_data/test/SRTM/subfolder/", filenamee),
           format = "GTiff",
           datatype = "FLT4S",
           overwrite = TRUE
@@ -280,7 +281,7 @@ preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
         
         writeRaster(
           mask,
-          filename = paste0(rgb_out_path, "test/tf_data/WOKAM/", filenamee),
+          filename = paste0(rgb_out_path, "tf_data/test/WOKAM/subfolder/", filenamee),
           format = "GTiff",
           datatype = "FLT4S",
           overwrite = TRUE
@@ -292,8 +293,8 @@ preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
         mask <- raster(paste0(rgb_out_path, "wokam/", filenamee))
         
         writeRaster(
-          three_band,
-          filename = paste0(rgb_out_path, "train/tf_data/SRTM/", filenamee),
+          rgb,
+          filename = paste0(rgb_out_path, "tf_data/train/SRTM/subfolder/", filenamee),
           format = "GTiff",
           datatype = "FLT4S",
           overwrite = TRUE
@@ -301,7 +302,7 @@ preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
         
         writeRaster(
           mask,
-          filename = paste0(rgb_out_path, "train/tf_data/WOKAM/", filenamee),
+          filename = paste0(rgb_out_path, "tf_data/train/WOKAM/subfolder/", filenamee),
           format = "GTiff",
           datatype = "FLT4S",
           overwrite = TRUE
@@ -312,5 +313,4 @@ preprocess_raster <- function(srtm_file = "D:/Masterarbeit/Data/srtm/srtm.tif",
 }
 
 
-preprocess_raster()
-
+preprocess_raster(tiles= FALSE)
