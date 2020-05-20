@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
     Input, concatenate, Conv2D, MaxPooling2D, UpSampling2D, Activation,
-    Reshape, BatchNormalization, Flatten, Dense, Dropout, Conv2DTranspose)
+    Reshape, BatchNormalization, Flatten, Dense, Dropout, Conv2DTranspose, ZeroPadding2D)
 import os
 
 def conv_block(tensor, nfilters, size=3, padding='same', initializer="he_normal"):
@@ -29,15 +29,26 @@ def deconv_block(tensor, residual, nfilters, size=3, padding='same', strides=(2,
     return y
 
 
-def make_KaI(img_height, img_width, nclasses=2, filters=64, one_hot = 2, deep = True):
+def make_KaI(img_height, img_width, nclasses=2, filters=64, one_hot = 2, deep = True, zero_pad = 0, channels = 3):
 # down
-    input_layer = Input(shape=(img_height, img_width, 3), name='image_input')
-    conv1 = conv_block(input_layer, nfilters=filters)
-    conv1_out = MaxPooling2D(pool_size=(2, 2))(conv1)
-    conv2 = conv_block(conv1_out, nfilters=filters*2)
-    conv2_out = MaxPooling2D(pool_size=(2, 2))(conv2)
-    conv3 = conv_block(conv2_out, nfilters=filters*4)
-    conv3_out = MaxPooling2D(pool_size=(2, 2))(conv3)
+    if zero_pad!=0:
+        input_layer = Input(shape=(img_height, img_width, channels), name='image_input')
+        input_layer_pad = ZeroPadding2D(((int(zero_pad/2), int(zero_pad/2)), (int(zero_pad/2),int(zero_pad/2))))(input_layer)
+        conv1 = conv_block(input_layer_pad, nfilters=filters)
+        conv1_out = MaxPooling2D(pool_size=(2, 2))(conv1)
+        conv2 = conv_block(conv1_out, nfilters=filters*2)
+        conv2_out = MaxPooling2D(pool_size=(2, 2))(conv2)
+        conv3 = conv_block(conv2_out, nfilters=filters*4)
+        conv3_out = MaxPooling2D(pool_size=(2, 2))(conv3)
+    else:
+        input_layer = Input(shape=(img_height, img_width, channels), name='image_input')
+        conv1 = conv_block(input_layer, nfilters=filters)
+        conv1_out = MaxPooling2D(pool_size=(2, 2))(conv1)
+        conv2 = conv_block(conv1_out, nfilters=filters*2)
+        conv2_out = MaxPooling2D(pool_size=(2, 2))(conv2)
+        conv3 = conv_block(conv2_out, nfilters=filters*4)
+        conv3_out = MaxPooling2D(pool_size=(2, 2))(conv3) 
+                                    
     if deep==True:
         conv4 = conv_block(conv3_out, nfilters=filters*8)
     #conv4_out = MaxPooling2D(pool_size=(2, 2))(conv4)
@@ -55,10 +66,15 @@ def make_KaI(img_height, img_width, nclasses=2, filters=64, one_hot = 2, deep = 
         deconv8 = deconv_block(conv3, residual=conv2, nfilters=filters*2)
         deconv9 = deconv_block(deconv8, residual=conv1, nfilters=filters)
 # output
-    output_layer = Conv2D(filters=one_hot, kernel_size=(1, 1))(deconv9)
-    #output_layer = Reshape((128, 128), input_shape=(128,128,1))(output_layer)
-    output_layer = BatchNormalization()(output_layer)
-    output_layer = Activation('sigmoid')(output_layer)
+    if zero_pad!=0:
+        deconv9 = tf.image.resize_with_crop_or_pad(deconv9, 100, 100)
+        output_layer = Conv2D(filters=one_hot, kernel_size=(1, 1))(deconv9)
+        output_layer = BatchNormalization()(output_layer)
+        output_layer = Activation('sigmoid')(output_layer)
+    else:
+        output_layer = Conv2D(filters=one_hot, kernel_size=(1, 1))(deconv9)
+        output_layer = BatchNormalization()(output_layer)
+        output_layer = Activation('sigmoid')(output_layer)                         
 
     model = Model(inputs=input_layer, outputs=output_layer, name='Unet')
     return model
