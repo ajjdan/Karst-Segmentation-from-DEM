@@ -52,7 +52,7 @@ def preprocess_output( image, categorical ):
     return( image )
 
 #Step 4 : Bring everything together to define your generator :
-def image_generator(files, files_2, batch_size = 64, intensify = False, random = True, batch_start = 0, categorical = True):
+def image_generator(files, files_2, batch_size = 20, intensify = False, random = True, batch_start = 0, categorical = True, lidar = False):
     
     samples_per_epoch = len(files)
     number_of_batches = samples_per_epoch/batch_size
@@ -185,6 +185,34 @@ def image_generator(files, files_2, batch_size = 64, intensify = False, random =
 
                 raster_preproc = preprocess_input(image=raster)
                 mask = preprocess_output(image = mask, categorical = categorical)
+
+                batch_input += [ raster_preproc ]
+                batch_output += [ mask ]
+
+              # Return a tuple of (input, output) to feed the network
+                batch_x = np.array( batch_input )
+                batch_y = np.array( batch_output )
+
+                yield( batch_x, batch_y )
+                
+        elif lidar == True:
+            for indx in random_index:
+                raster = get_input(files[int(indx)])
+                mask = get_output(files_2[int(indx)])
+
+                raster = raster[0:1000,0:1000].reshape(1000,1000)
+                mask = mask[0:1000,0:1000].reshape(1000,1000)
+                
+                mask_idx = mask              
+                                
+                raster = preprocessing.minmax_scale(raster,feature_range=(0.2, 1))
+                raster = exposure.equalize_hist(raster)
+                
+                raster = raster[0:1000,0:1000].reshape(1000,1000,1)
+
+                raster_preproc = preprocess_input(image=raster)
+                mask = preprocess_output(image = mask, categorical = categorical)                
+                mask = mask[0:1000,0:1000].reshape(1000,1000,1)
 
                 batch_input += [ raster_preproc ]
                 batch_output += [ mask ]
