@@ -1,0 +1,2 @@
+model_checkpoint_path: "top_weights_200511_augment_50"
+all_model_checkpoint_paths: "top_weights_200511_augment_50"
