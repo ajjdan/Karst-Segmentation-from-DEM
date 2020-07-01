@@ -11,6 +11,9 @@ from glob import glob
 from random import choices
 from sklearn import preprocessing
 from skimage import exposure
+
+import rasterio
+from rasterio.plot import show
 #from sklearn.impute import SimpleImputer
 #So, I like to split the batch generator into 4 steps:
 #1. Get input            : input_path -> image
@@ -20,8 +23,8 @@ from skimage import exposure
 #Step 1 : Define a function to get input (can be subsetting a numpy array, pandas dataframe, reading in from disk etc.) :
 
 def get_input(path):
-    
-    img = imread( path )
+ 
+    img = imread( path)
     
     return( img )
 #Step 2 : Define a function to get output :
@@ -123,7 +126,7 @@ def image_generator(files, files_2, batch_size = 2, intensify = False, random = 
                 
         elif intensify == 20:
             for indx in random_index:
-                raster = get_input(files[int(indx)] )
+                raster = get_input(files[int(indx)])
                 mask = get_output(files_2[int(indx)])
 
                 mask_idx = mask                
@@ -160,7 +163,7 @@ def image_generator(files, files_2, batch_size = 2, intensify = False, random = 
                 
         elif intensify == 50:
             for indx in random_index:
-                raster = get_input(files[int(indx)] )
+                raster = get_input(files[int(indx)])
                 mask = get_output(files_2[int(indx)])
 
                 mask_idx = mask              
@@ -228,7 +231,7 @@ def image_generator(files, files_2, batch_size = 2, intensify = False, random = 
         else:
             
             for indx in random_index:
-                raster = get_input(files[int(indx)] )
+                raster = get_input(files[int(indx)])
                 mask = get_output(files_2[int(indx)])
                     
                 raster = preprocess_input(image=raster)
